@@ -1,16 +1,24 @@
 #ifndef GAME_H
 #define GAME_H
 
+#include "Arduino.h"
+
 #define PAUSE_BUTTON A_BUTTON
 
 enum GameState {
 	MENU,
+	NEW_GAME,
 	GAME_OVER,
 	PLAYING,
 	CREDITS,
 	PAUSED,
 	WIN_ARCADE,
 	WIN_CAMPAIGN,
+};
+
+enum GhostMode {
+	Scatter,
+	Chase
 };
 
 enum GameMode {
@@ -38,6 +46,7 @@ struct Character {
 
 struct Ghost: public Character {
 	GhostPersonality personality;
+	int respawn_delay = -1;
 };
 
 struct Game {

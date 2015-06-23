@@ -34,6 +34,13 @@ class Map
 	public:
 	Map();
 
+	void setObjectAt(int8_t x, int8_t y, uint8_t id);
+	void removeObjectAt(uint8_t x, uint8_t y);
+	uint8_t objectAt(int8_t x, int8_t y);
+	void eatDot(int8_t x, int8_t y);
+	boolean complete();
+	void prepareFromFlash(const char *map);
+	void reset();
 
 	uint8_t width;
 	uint8_t height;
@@ -48,11 +55,6 @@ class Map
 
 	uint8_t grid[24*24];
 
-	void setObjectAt(int8_t x, int8_t y, uint8_t id);
-	void removeObjectAt(uint8_t x, uint8_t y);
-	uint8_t objectAt(int8_t x, int8_t y);
-	boolean complete();
-	void prepareFromFlash(const char *map);
 };
 
 #endif

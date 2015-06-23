@@ -2,6 +2,9 @@
 #include <SPI.h>
 #include <EEPROM.h>
 #include <Arduboy.h>
+#include <ArduboyExtra.h>
+#include <sprites.h>
+#include <simple_buttons.h>
 
 // resources
 #include "assets.h"
@@ -14,8 +17,10 @@
 
 Map current_map;
 Arduboy AB;
+SimpleButtons buttons(AB);
 GameState app_state = MENU;
 Game game;
+Sprites sprites(AB);
 
 Character player;
 Ghost ghosts[4];
@@ -86,6 +91,8 @@ void game_loop()
 	switch (app_state) {
 		case MENU:
 			gameMenu();
+			break;
+		case NEW_GAME:
 		case PLAYING:
 			gamePlay();
 			break;
@@ -94,6 +101,9 @@ void game_loop()
 			break;
 		case PAUSED:
 			pause();
+			break;
+		case CREDITS:
+			credits();
 			break;
 		case WIN_CAMPAIGN:
 		case WIN_ARCADE:

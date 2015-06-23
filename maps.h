@@ -6,6 +6,11 @@
 #define o 2
 #define T 3
 
+#define MAP_HEADER_SIZE 6
+#define TREAT_COUNT_OFFSET 6
+#define TREATS_OFFSET 7
+
+
 // 15x15 grid
 PROGMEM const char map_intro[] = {
 	16,16, // size of map
