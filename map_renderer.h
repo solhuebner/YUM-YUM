@@ -12,6 +12,8 @@ public:
 	MapRenderer(Map &map, Game &game);
 
 	void render();
+	void renderPlayer(int screen_x, int screen_y);
+	void renderGhost(int screen_x, int screen_y);
 
 	Map *map;
 	Game *game;

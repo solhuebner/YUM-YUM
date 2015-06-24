@@ -8,6 +8,7 @@
 #include "maps.h"
 #include "map_renderer.h"
 
+
 extern Arduboy AB;
 extern Game game;
 extern GameState app_state;
@@ -73,27 +74,65 @@ void updateScore()
 // direction
 void dpadInput()
 {
-	if (buttons.justPressed(UP_BUTTON)) {
-
-	} else if (buttons.justPressed(DOWN_BUTTON)) {
-
-	} else if (buttons.justPressed(RIGHT_BUTTON)) {
-
-	} else if (buttons.justPressed(LEFT_BUTTON)) {
-
+	Direction dir = None;
+	int new_x, new_y;
+	uint8_t obj;
+	if (buttons.up()) {
+		dir = Up;
+	} else if (buttons.down()) {
+		dir = Down;
+	} else if (buttons.right()) {
+		dir = Right;
+	} else if (buttons.left()) {
+		dir = Left;
 	}
+
+
+	// AB.setCursor(0,0);
+	// AB.println(dir);
+
+	// AB.tunes.tone(500,50);
+	if (buttons.pressed(LEFT_BUTTON)) {
+		map_view.viewport_x -=1;
+	} else if (buttons.pressed(RIGHT_BUTTON)) {
+		map_view.viewport_x +=1;
+	} else if (buttons.pressed(UP_BUTTON)) {
+		map_view.viewport_y -=1;
+	} else if (buttons.pressed(DOWN_BUTTON)) {
+		map_view.viewport_y+=1;
+	}
+	if (dir == None)
+		return;
+
+	new_x = player.x + direction_vectors[dir].x;
+	new_y = player.y + direction_vectors[dir].y;
+	obj = current_map.objectAt(new_x, new_y);
+	if (obj == EMPTY || obj == DOT) {
+		player.desired_direction = Up;
+	}
+
+}
+
+void addScore(int score)
+{
+	game.score += score;
 }
 
 
 void gamePlay()
 {
-	if (app_state==NEW_GAME)
+	if (app_state == NEW_GAME)
 		newGame();
 
 	while(true) {
-		if (!AB.nextFrame())
-			continue;
 
+
+
+		if (!AB.nextFrame()) {
+			continue;
+		}
+
+		buttons.poll();
 		dpadInput();
 
 		/*
@@ -103,8 +142,8 @@ void gamePlay()
 		AI for ghosts runs
 		move characters
 		animate characters
-
 		*/
+
 
 		/*
 		if collide with ghost
@@ -115,26 +154,38 @@ void gamePlay()
 				restart level?
 		*/
 
-		// if collide dot
-		current_map.eatDot(player.x, player.y);
+		// if dot at currrent location and pacman centered in current
+		// tile
+		if (false) {
+			addScore(10);
+			current_map.eatDot(player.x, player.y);
+		}
 
-		/*
-		if collide fruit
-			eat fruit
-			remove fruit from map
-			add score
-		*/
+		// if fruit at current location and pacman centered in current
+		// tile
+		if (false) {
+			addScore(1000);
+			// eatDot also eats fruit
+			current_map.eatDot(player.x, player.y);
+		}
 
 		/*
 		if collid powerup
+			addScore(10);
 			set powerup gameplay mode
 			powerup timer?
-
 		*/
+
+
 
 		map_view.render();
 		updateScore();
+
+
+		AB.setCursor(0,0);
+		AB.println(AB.cpuLoad());
 		AB.display();
+
 
 		if (current_map.complete()) {
 			winLevel();
@@ -142,9 +193,9 @@ void gamePlay()
 		}
 
 		// handle post input
-		 if (AB.pressed(PAUSE_BUTTON)) {
-			  app_state = PAUSED;
-		 }
+		 // if (AB.pressed(PAUSE_BUTTON)) {
+			//   app_state = PAUSED;
+		 // }
 
 		// game loss
 		if (game.lives == 0) {
@@ -154,5 +205,6 @@ void gamePlay()
 		// back to state dispatch in main loop
 		 if (app_state != PLAYING)
 		 	return;
+
 	}
 }

@@ -15,21 +15,24 @@
 
 #define ANY_BUTTON 0xFF
 
-Map current_map;
+
+// hardware
 Arduboy AB;
 SimpleButtons buttons(AB);
-GameState app_state = MENU;
-Game game;
 Sprites sprites(AB);
 
+// game
+Map current_map;
+GameState app_state = MENU;
+Game game;
 Character player;
-Ghost ghosts[4];
 
+Ghost ghosts[GHOST_COUNT];
 
 void logo()
 {
 	AB.display();
-	delay(3000);
+	// delay(3000);
 }
 
 void gameInit()
@@ -62,8 +65,9 @@ void pause()
 	// wait for button to be released
 	while (AB.pressed(PAUSE_BUTTON)) {};
 
-	// show pause dialog
+	// show pause screen
 	AB.display();
+	delay(250);
 	waitForButtons(PAUSE_BUTTON);
 }
 
@@ -72,6 +76,7 @@ void gameOver() {
 	// render score?
 	// render achievements?
 	AB.display();
+	delay(250);
 	waitForButtons(ANY_BUTTON);
 }
 
@@ -80,6 +85,11 @@ void credits() {
 		if (!AB.nextFrame())
 			continue;
 		// roll credits
+
+		if (buttons.justPressed(A_BUTTON)) {
+			app_state = MENU;
+			return;
+		}
 	}
 }
 

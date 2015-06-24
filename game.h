@@ -4,6 +4,7 @@
 #include "Arduino.h"
 
 #define PAUSE_BUTTON A_BUTTON
+#define GHOST_COUNT 4
 
 enum GameState {
 	MENU,
@@ -14,6 +15,21 @@ enum GameState {
 	PAUSED,
 	WIN_ARCADE,
 	WIN_CAMPAIGN,
+};
+
+typedef struct Vector {
+	int8_t x;
+	int8_t y;
+};
+
+extern Vector direction_vectors[];
+
+enum Direction {
+	Up = 0,
+	Down = 1,
+	Right = 2,
+	Left = 3,
+	None = 10
 };
 
 enum GhostMode {
@@ -36,12 +52,12 @@ enum GhostPersonality {
 };
 
 struct Character {
-	uint8_t grid_x;
-	uint8_t grid_y;
 	int x;
 	int y;
 	int8_t speed_x;
 	int8_t speed_y;
+	Direction direction;
+	Direction desired_direction;
 };
 
 struct Ghost: public Character {
@@ -54,7 +70,7 @@ struct Game {
 	uint8_t level;
 	uint8_t campaign_level;
 	GameMode mode;
-	long score;
+	unsigned long score;
 };
 
 #endif
