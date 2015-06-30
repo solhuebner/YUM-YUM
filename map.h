@@ -14,6 +14,7 @@
 #define WALL 1
 #define DOT 2
 #define FRUIT 3
+#define POWERUP 4
 #define OFF_GRID 255
 
 

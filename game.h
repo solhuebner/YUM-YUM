@@ -52,12 +52,12 @@ enum GhostPersonality {
 };
 
 struct Character {
-	int x;
-	int y;
-	int8_t speed_x;
-	int8_t speed_y;
+	int8_t x;
+	int8_t y;
+	int8_t speed;
 	Direction direction;
 	Direction desired_direction;
+	uint8_t fractional;
 };
 
 struct Ghost: public Character {

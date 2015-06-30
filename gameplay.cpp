@@ -2,6 +2,7 @@
 #include "ArduboyExtra.h"
 #include "simple_buttons.h"
 
+#include "ai.h"
 #include "assets.h"
 #include "game.h"
 #include "map.h"
@@ -32,8 +33,7 @@ void newGame()
 	// set starting positions
 	player.x = current_map.player_start_x;
 	player.y = current_map.player_start_y;
-	player.speed_x = 0;
-	player.speed_y = 0;
+	player.speed = 0;
 
 	for (int i=0; i<4; i++) {
 		ghosts[i].x = current_map.ghost_start_x;
@@ -41,6 +41,11 @@ void newGame()
 	}
 
 	app_state = PLAYING;
+}
+
+void restartLevel()
+{
+
 }
 
 void winLevel()
@@ -118,6 +123,113 @@ void addScore(int score)
 	game.score += score;
 }
 
+bool centered(Character player)
+{
+	return player.fractional == 7;
+}
+
+bool collide(Character player, Ghost ghost)
+{
+	// needs to also think about fractionals
+}
+
+void handleGhostCollisions()
+{
+	for (uint8_t i=0; i < GHOST_COUNT; i++)
+	{
+		if (collide(player, ghosts[i])) {
+			// if we're powered up, lets eat that ghost!
+			// if power up mode
+			// else
+
+			// touch a ghost, lose a life
+			game.lives--;
+			if (game.lives > 0) {
+				restartLevel();
+			}
+		}
+	}
+}
+
+void handleEating()
+{
+	uint8_t current_tile;
+	current_tile = current_map.objectAt(player.x, player.y);
+
+	if (centered(player)) {
+		if (current_tile == DOT) {
+			addScore(10);
+			current_map.eatDot(player.x, player.y);
+		}
+
+		if (current_tile == FRUIT) {
+			addScore(1000);
+			// eatDot also eats fruit
+			current_map.eatDot(player.x, player.y);
+		}
+
+		if (current_tile == POWERUP) {
+			addScore(10);
+			// set powerup gameplay mode
+			// powerup timer?
+		}
+	}
+}
+
+// does this need to handle wall collisions or is that elsewhere
+void moveCharacters()
+{
+	Vector d;
+	uint8_t next_tile;
+
+	// GHOSTS
+
+	for (uint8_t i=0; i < GHOST_COUNT; i++) {
+		if (ghosts[i].direction == None)
+			continue;
+
+		// DRY?
+		ghosts[i].fractional+=1;
+		if (ghosts[i].fractional>14) {
+			d = direction_vectors[ghosts[i].direction];
+			ghosts[i].x += d.x;
+			ghosts[i].y += d.y;
+			ghosts[i].fractional = 0;
+		}
+	}
+
+	// PLAYER
+
+	// we may not be moving yet
+	if (player.direction == None)
+		return;
+
+	d = direction_vectors[player.direction];
+	next_tile = current_map.objectAt(player.x+d.x, player.y+d.y);
+	// if we're about to hit a wall, simply stop moving
+	if (centered(player) && next_tile == WALL) {
+		player.direction = None;
+		return;
+	}
+
+
+	// DRY?
+	player.fractional+=1;
+	if (player.fractional>14) {
+		player.x += d.x;
+		player.y += d.y;
+		player.fractional = 0;
+	}
+}
+
+void setGhostMode()
+{
+	/*
+	change ghost mode?
+		scatter?
+		chase?
+	*/
+}
 
 void gamePlay()
 {
@@ -126,8 +238,6 @@ void gamePlay()
 
 	while(true) {
 
-
-
 		if (!AB.nextFrame()) {
 			continue;
 		}
@@ -135,49 +245,14 @@ void gamePlay()
 		buttons.poll();
 		dpadInput();
 
-		/*
-		change ghost mode?
-			scatter?
-			chase?
-		AI for ghosts runs
-		move characters
-		animate characters
-		*/
+		setGhostMode(); // scatter, chase, etc.
+		runGhostAI();
 
+		moveCharacters();
+		handleGhostCollisions();
+		handleEating();
 
-		/*
-		if collide with ghost
-			if powerup mode
-				eat ghost?
-			else
-				game.lives--;
-				restart level?
-		*/
-
-		// if dot at currrent location and pacman centered in current
-		// tile
-		if (false) {
-			addScore(10);
-			current_map.eatDot(player.x, player.y);
-		}
-
-		// if fruit at current location and pacman centered in current
-		// tile
-		if (false) {
-			addScore(1000);
-			// eatDot also eats fruit
-			current_map.eatDot(player.x, player.y);
-		}
-
-		/*
-		if collid powerup
-			addScore(10);
-			set powerup gameplay mode
-			powerup timer?
-		*/
-
-
-
+		AB.clearDisplay();
 		map_view.render();
 		updateScore();
 
@@ -204,7 +279,7 @@ void gamePlay()
 
 		// back to state dispatch in main loop
 		 if (app_state != PLAYING)
-		 	return;
+			return;
 
 	}
 }
