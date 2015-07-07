@@ -16,10 +16,11 @@ extern Character player;
 extern Ghost ghosts[];
 
 
-const unsigned char* const tiles[3] PROGMEM = {
+const unsigned char* const tiles[4] PROGMEM = {
   NULL, // blank
   wall_TL_plus_mask, // wall
   small_ball_plus_mask,  // dot
+  NULL
 };
 
 
@@ -45,11 +46,11 @@ void MapRenderer::getRenderOffset(Character obj, Vector &v)
       v.x = +7 - obj.fractional;
       break;
     case Left:
-      v.x = -7 + obj.fractional;
+      v.x = -1 * obj.fractional;
       v.y = 0; // no offset needed for left/right movement
       break;
     case Right:
-      v.x = +7 - obj.fractional;
+      v.x = obj.fractional;
       v.y = 0; // no offset needed for left/right movement
       break;
     case None:
@@ -62,16 +63,21 @@ void MapRenderer::getRenderOffset(Character obj, Vector &v)
 
 // 0 - 14 (7)
 // 0 - 8 (4)
+#define PACMAN_WIDTH 16
+#define PACMAN_HEIGHT 16
 void MapRenderer::renderPlayer(Character player, int screen_x, int screen_y)
 {
   Vector v;
   int8_t x, y;
+
   getRenderOffset(player, v);
+  x = screen_x;
+  y = screen_y;
 
   sprites.drawBitmap(
     x + v.x + 4,
     y + v.y,
-    YumYum16x16_plus_mask, NULL, 20, 18, SPRITE_PLUS_MASK
+    YumYum16x16_plus_mask, NULL, PACMAN_WIDTH, PACMAN_HEIGHT, SPRITE_PLUS_MASK
     );
 }
 
@@ -79,7 +85,10 @@ void MapRenderer::renderGhost(Ghost ghost, int screen_x, int screen_y)
 {
   Vector v;
   int8_t x, y;
+
   getRenderOffset(ghost, v);
+  x = screen_x;
+  y = screen_y;
 
   sprites.drawBitmap(
     // offsets have to do with size/height of ghost and making it look
@@ -105,8 +114,8 @@ void MapRenderer::renderTile(uint8_t grid_x, uint8_t grid_y,
   look_ahead_right = map->objectAt(grid_x+1,grid_y);
   look_ahead_bottom = map->objectAt(grid_x,grid_y+1);
   // render_height=18;
+
   if (look_ahead_right == WALL && look_ahead_bottom==WALL) {
-  // if (look_ahead_right == WALL) {
     render_height=9;
   } else {
     render_height=18;
@@ -152,8 +161,8 @@ void MapRenderer::autoCenter()
   start_y = player.y - 4;
 
   // set base value for the rendering viewport
-  viewport_x = -TILE_X_SIZE / 2;
-  viewport_y = -TILE_Y_SIZE / 2;
+  viewport_x = -(TILE_X_SIZE / 2);
+  viewport_y = -(TILE_Y_SIZE / 2);
 
   // take the player render offset into consideration
   viewport_x -= offset.x;
@@ -165,15 +174,15 @@ void MapRenderer::autoCenter()
 void MapRenderer::render()
 {
   uint8_t render_h = 8;
-  uint8_t render_w = 10;
+  uint8_t render_w = 11;
 
   int screen_x = viewport_x;
   int screen_y = viewport_y;
   // now set start x, start y based on viewport
 
   // AB.setCursor(0, 0);
-  for (uint8_t y = start_y; y < render_h; y++) {
-    for (uint8_t x = start_x; x < render_w; x++) {
+  for (int8_t y = start_y; y < start_y + render_h; y++) {
+    for (int8_t x = start_x; x < start_x + render_w; x++) {
 
       renderTile(x, y, screen_x, screen_y);
 

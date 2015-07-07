@@ -5,26 +5,36 @@
 #include "ai.h"
 #include "assets.h"
 #include "game.h"
+#include "gameplay.h"
 #include "map.h"
 #include "maps.h"
 #include "map_renderer.h"
-
+#include "sounds.h"
 
 extern Arduboy AB;
 extern Game game;
 extern GameState app_state;
 extern Map current_map;
 extern SimpleButtons buttons;
+extern Sounds sound;
 
 extern Character player;
 extern Ghost ghosts[];
 
 MapRenderer map_view(current_map, game);
 
+#define CENTERED 7
+
+bool centered(Character chr)
+{
+	return chr.fractional == CENTERED;
+}
+
 void newGame()
 {
 	// prepare game and map
-	current_map.prepareFromFlash(map_intro);
+	current_map.prepareFromFlash(pacman_map);
+	// current_map.prepareFromFlash(map_intro);
 	game.score = 0;
 	game.level = 1;
 	game.lives = 3;
@@ -34,6 +44,7 @@ void newGame()
 	player.x = current_map.player_start_x;
 	player.y = current_map.player_start_y;
 	player.speed = 0;
+	player.fractional = CENTERED;
 
 	for (int i=0; i<4; i++) {
 		ghosts[i].x = current_map.ghost_start_x;
@@ -92,28 +103,46 @@ void dpadInput()
 		dir = Left;
 	}
 
-
-	// AB.setCursor(0,0);
-	// AB.println(dir);
-
-	// AB.tunes.tone(500,50);
-	if (buttons.pressed(LEFT_BUTTON)) {
-		map_view.viewport_x -=1;
-	} else if (buttons.pressed(RIGHT_BUTTON)) {
-		map_view.viewport_x +=1;
-	} else if (buttons.pressed(UP_BUTTON)) {
-		map_view.viewport_y -=1;
-	} else if (buttons.pressed(DOWN_BUTTON)) {
-		map_view.viewport_y+=1;
-	}
-	if (dir == None)
+	// desire has already been registered
+	if (dir == player.desired_direction)
 		return;
 
-	new_x = player.x + direction_vectors[dir].x;
-	new_y = player.y + direction_vectors[dir].y;
-	obj = current_map.objectAt(new_x, new_y);
-	if (obj == EMPTY || obj == DOT) {
-		player.desired_direction = Up;
+	// we are already heading that direction, no change needed
+	if (dir == player.direction && player.desired_direction == None)
+		return;
+
+	if (buttons.left()) {
+		map_view.viewport_x -=1;
+	} else if (buttons.right()) {
+		map_view.viewport_x +=1;
+	} else if (buttons.up()) {
+		map_view.viewport_y -=1;
+	} else if (buttons.down()) {
+		map_view.viewport_y+=1;
+	}
+
+	// log the desire to turn if we hit the key a little early
+	if (dir != None) {
+		if (player.fractional<=9) {
+			new_x = player.x + direction_vectors[dir].x;
+			new_y = player.y + direction_vectors[dir].y;
+			obj = current_map.objectAt(new_x, new_y);
+			if (obj != WALL) {
+				player.desired_direction = dir;
+			}
+		}
+	}
+
+	// actually change our direction
+	if (player.desired_direction != None) {
+		if (centered(player) || player.direction == None) {
+			player.direction = player.desired_direction;
+			player.desired_direction = None;
+
+			// if we're hitting a little late, rewind us when we turn
+			if (player.fractional>7)
+				player.fractional=7;
+		}
 	}
 
 }
@@ -123,14 +152,24 @@ void addScore(int score)
 	game.score += score;
 }
 
-bool centered(Character player)
-{
-	return player.fractional == 7;
-}
 
 bool collide(Character player, Ghost ghost)
 {
-	// needs to also think about fractionals
+	// needs to also think about fractionals?
+	return (player.x == ghost.x &&
+		player.y == ghost.y);
+}
+
+void eatGhost(Ghost ghost)
+{
+	// what happens when a ghost is eaten?
+	addScore(1000);
+	sound.eatGhost();
+	// dry?
+	ghost.x = current_map.ghost_start_x;
+	ghost.y = current_map.ghost_start_y;
+	ghost.direction = None;
+	// set delay?
 }
 
 void handleGhostCollisions()
@@ -138,14 +177,12 @@ void handleGhostCollisions()
 	for (uint8_t i=0; i < GHOST_COUNT; i++)
 	{
 		if (collide(player, ghosts[i])) {
-			// if we're powered up, lets eat that ghost!
-			// if power up mode
-			// else
-
-			// touch a ghost, lose a life
-			game.lives--;
-			if (game.lives > 0) {
-				restartLevel();
+			if (player.powered_up) {
+				eatGhost(ghosts[i]);
+			} else {
+				// touch a ghost, lose a life
+				game.lives--;
+				if (game.lives > 0) { restartLevel(); }
 			}
 		}
 	}
@@ -154,25 +191,34 @@ void handleGhostCollisions()
 void handleEating()
 {
 	uint8_t current_tile;
+
+	// we can't eat if we aren't centered
+	if (!centered(player))
+		return;
+
+
 	current_tile = current_map.objectAt(player.x, player.y);
 
-	if (centered(player)) {
-		if (current_tile == DOT) {
-			addScore(10);
-			current_map.eatDot(player.x, player.y);
-		}
+	if (current_tile == DOT) {
+		addScore(10);
+		AB.tunes.tone(3200,10);
+		sound.dot();
+		current_map.eatDot(player.x, player.y);
+	}
 
-		if (current_tile == FRUIT) {
-			addScore(1000);
-			// eatDot also eats fruit
-			current_map.eatDot(player.x, player.y);
-		}
+	if (current_tile == FRUIT) {
+		addScore(1000);
+		sound.dot();
+		// eatDot also eats fruit
+		current_map.eatDot(player.x, player.y);
+	}
 
-		if (current_tile == POWERUP) {
-			addScore(10);
-			// set powerup gameplay mode
-			// powerup timer?
-		}
+	if (current_tile == POWERUP) {
+		addScore(10);
+		sound.powerup();
+		player.powered_up = true;
+		// powerup timer?
+		current_map.eatDot(player.x, player.y);
 	}
 }
 
@@ -252,20 +298,33 @@ void gamePlay()
 		handleGhostCollisions();
 		handleEating();
 
+
+		// START render
 		AB.clearDisplay();
+		map_view.autoCenter();
 		map_view.render();
 		updateScore();
 
 
 		AB.setCursor(0,0);
 		AB.println(AB.cpuLoad());
+		AB.println(current_map.dots_left);
+		// AB.print("X: ");
+		// AB.print(player.x);
+		// AB.print(" Y: ");
+		// AB.print(player.y);
+		// AB.println("    ");
+		AB.print(player.fractional);
+		AB.println("    ");
+		// AB.println(millis());
 		AB.display();
+		// END render
 
 
-		if (current_map.complete()) {
-			winLevel();
-			nextLevel();
-		}
+		// if (current_map.complete()) {
+		// 	winLevel();
+		// 	nextLevel();
+		// }
 
 		// handle post input
 		 // if (AB.pressed(PAUSE_BUTTON)) {

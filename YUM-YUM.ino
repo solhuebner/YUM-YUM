@@ -11,6 +11,7 @@
 #include "map.h"
 #include "maps.h"
 #include "game.h"
+#include "sounds.h"
 #include "utils.h"
 
 #define ANY_BUTTON 0xFF
@@ -18,6 +19,7 @@
 
 // hardware
 Arduboy AB;
+Sounds sound;
 SimpleButtons buttons(AB);
 Sprites sprites(AB);
 

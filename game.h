@@ -25,11 +25,11 @@ typedef struct Vector {
 extern Vector direction_vectors[];
 
 enum Direction {
-	Up = 0,
-	Down = 1,
-	Right = 2,
-	Left = 3,
-	None = 10
+	None = 0,
+	Up = 1,
+	Down = 2,
+	Right = 3,
+	Left = 4
 };
 
 enum GhostMode {
@@ -58,6 +58,7 @@ struct Character {
 	Direction direction;
 	Direction desired_direction;
 	uint8_t fractional;
+	bool powered_up = false;
 };
 
 struct Ghost: public Character {

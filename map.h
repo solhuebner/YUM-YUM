@@ -3,24 +3,23 @@
 
 #include "Arduino.h"
 
-// types of fruit
-#define NONE 0
-#define APPLE 1
-#define CHERRY 2
-#define STRAWBERRY 3
 
 // types of tiles
 #define EMPTY 0
 #define WALL 1
 #define DOT 2
 #define FRUIT 3
-#define POWERUP 4
+#define POWERUP 3
 #define OFF_GRID 255
 
+// types of fruit, also tile types
+#define NONE 0
+#define APPLE 10
+#define CHERRY 11
+#define STRAWBERRY 12
 
-// #define YUMMY_DOT 5
 
-struct Treat
+struct Item
 {
 public:
 	uint8_t kind;
@@ -43,18 +42,19 @@ class Map
 	void prepareFromFlash(const char *map);
 	void reset();
 
-	uint8_t width;
-	uint8_t height;
-	uint8_t player_start_x;
-	uint8_t player_start_y;
 	uint8_t ghost_start_x;
 	uint8_t ghost_start_y;
-	int starting_dots;
+	uint8_t player_start_x;
+	uint8_t player_start_y;
+	Item treats[10]; // maximum 10 treats
 	int	 dots_left;
-	Treat treats[10]; // maximum 10 treats
 
-
-	uint8_t grid[24*24];
+private:
+	uint8_t width;
+	uint8_t height;
+	int starting_dots;
+	uint8_t grid[32*32/4];
+	const char *map_ptr;
 
 };
 
